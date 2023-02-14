@@ -1,3 +1,6 @@
+# Transfer colombia dataset into data directory
+cp -r /mnt/datasets/project_2/colombia .
+
 # Import data and demultiplexing while working directory is `/data/colombia`
 qiime tools import \
   --type 'SampleData[SequencesWithQuality]' \
