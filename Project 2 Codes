@@ -69,6 +69,28 @@ qiime feature-table summarize \
 > --o-visualization table-no-mitochondria-no-chloroplast.qzv \
 > --m-sample-metadata-file colombia_metadata.txt
 
+# Generate qzv file after filtering
+qiime feature-table summarize \
+> --i-table table-no-mitochondria-no-chloroplast.qza \
+> --o-visualization table-no-mitochondria-no-chloroplast.qzv \
+> --m-sample-metadata-file colombia_metadata.txt
+
+# Generate a tree for phylogenetic diversity analyses
+qiime phylogeny align-to-tree-mafft-fasttree \
+  --i-sequences rep-seqs.qza \
+  --o-alignment aligned-rep-seqs.qza \
+  --o-masked-alignment masked-aligned-rep-seqs.qza \
+  --o-tree unrooted-tree.qza \
+  --o-rooted-tree rooted-tree.qza 
+
+# Alpha-rarefaction  
+qiime diversity alpha-rarefaction \
+    --i-table table.qza \
+    --i-phylogeny rooted-tree.qza \
+    --p-max-depth 105000 \
+    --m-metadata-file colombia_metadata.txt \
+    --o-visualization alpha-rarefaction.qzv
+
   
 # Training classifier****** (do we need to re-train the classifier?)
 qiime feature-classifier extract-reads \
