@@ -1,0 +1,30 @@
+#exporting files
+ # create a new bash script named export.sh using
+ nano export.sh
+ # bash script export.sh
+
+ #!/bin/bash
+
+ qiime tools export \
+--input-path table.qza \
+--output-path table_export 
+
+qiime tools export \
+--input-path rooted-tree.qza \
+--output-path rooted-tree_export 
+
+qiime tools export \
+--input-path taxonomy.qza \
+--output-path taxonomy_export 
+
+qiime tools export \
+--input-path rep-seqs.qza \
+--output-path rep-seqs_exported
+
+#To export a biom file into a text file:
+biom convert -i table_export/feature-table.biom --to-tsv -o feature-table.txt
+
+#secure copy to laptop
+scp root@1...:/root/data/..colombia_metadata.txt .
+
+scp -r root@...:/root/data/Colombia .
