@@ -126,6 +126,7 @@ isa_colombia$sign %>%
   left_join(taxtable) %>%
   filter(p.value<0.05) %>% View()
 
+##Need Taxa table to tell what the ASVs are?
 #### DESeq by age####
 colombia_deseq <- phyloseq_to_deseq2(colombia_final, ~age_range)
 DESEQ_colombia <- DESeq(colombia_deseq)
