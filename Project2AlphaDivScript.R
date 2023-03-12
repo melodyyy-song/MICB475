@@ -86,16 +86,56 @@ colombia_old_rare <- rarefy_even_depth(colombia_old_final, rngseed = 1, sample.s
 
 # Alpha Diversity young population
 
-plot_richness(colombia_young_rare, measures = c("Observed","Shannon","Chao1")) 
-
-gg_richness <- plot_richness(colombia_young_rare, x = "insulin_resistance", measures = c("Observed","Shannon","Chao1")) +
+gg_richness_young <- plot_richness(colombia_young_rare, x = "insulin_resistance", measures = c("Observed","Shannon","Chao1")) +
   xlab("Insulin Resistance") +
   geom_boxplot()
-gg_richness
+gg_richness_young
 
-ggsave(filename = "Module13/plot_richness.png"
+ggsave(filename = "Module13/plot_richness_young.png"
        , gg_richness
        , height=4, width=6)
 
-estimate_richness(atacama_rare)
+estimate_richness(colombia_young_rare)
+
+gg_richness_old <- plot_richness(colombia_old_rare, x = "insulin_resistance", measures = c("Observed","Shannon","Chao1")) +
+  xlab("Insulin Resistance") +
+  geom_boxplot()
+gg_richness_old
+
+
 # ggpubr
+
+# t test/wilcoxon test
+
+library(tidyverse)
+library(phyloseq)
+
+######## Load data ##########
+# load("Module13/atacama_rare.RData")
+
+######## Comparison of two means with t-test (Parametric) ##########
+# Let's do very simple plot with t-test
+plot_richness(colombia_young_rare, x = "insulin_resistance", measures="Shannon")
+# Need to extract information
+alphadiv <- estimate_richness(colombia_young_rare)
+samp_dat <- sample_data(colombia_young_rare)
+samp_dat_wdiv <- data.frame(samp_dat, alphadiv)
+# These are equivalent:
+# t.test()
+t.test(samp_dat_wdiv$Shannon ~ samp_dat_wdiv$insulin_resistance)
+
+
+# Note: you can set variances to be equal for a "classic" t-test
+# t.test(Shannon ~ vegetation, data=samp_dat_wdiv, var.equal=TRUE)
+# If your data is paired, you can set paired=TRUE
+# t.test(Shannon ~ vegetation, data=samp_dat_wdiv, paired=TRUE)
+
+#### Microbial count data is generally NON-NORMAL ####
+# In fact, it is even more complex because microbial data is usually in RELATIVE ABUNDANCE
+allCounts <- as.vector(otu_table(colombia_young_rare))
+allCounts <- allCounts[allCounts>0]
+hist(allCounts)
+hist(log(allCounts))
+
+wilcox.test(Shannon ~ insulin_resistance, data=samp_dat_wdiv)
+
