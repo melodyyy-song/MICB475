@@ -146,7 +146,7 @@ ggplot(res) +
 
 ## Make variable to color by whether it is significant + large change
 res %>%
-  mutate(significant = padj<0.01 & abs(log2FoldChange)>2) %>%
+  mutate(significant = padj<0.01 & abs(log2FoldChange)>1.5) %>%
   ggplot() +
   geom_point(aes(x=log2FoldChange, y=-log10(padj), col=significant))
 
