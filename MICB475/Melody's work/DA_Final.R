@@ -45,10 +45,10 @@ colombia_filt <- subset_taxa(colombia,  Domain == "d__Bacteria" & Class!="c__Chl
 colombia_filt_nolow <- filter_taxa(colombia_filt, function(x) sum(x)>5, prune = TRUE)
 colombia_filt_nolow_samps <- prune_samples(sample_sums(colombia_filt_nolow)>100, colombia_filt_nolow)
 colombia_final <- subset_samples(colombia_filt_nolow_samps, !is.na(insulin_resistance) )
-
+#colombia_final <- colombia_filt
 #### Rarefy samples to depth 1000 ####
 #Colombia_rare <- rarefy_even_depth(colombia_final, rngseed = 1, sample.size = 1000)
-
+save(colombia_final, file="colombia_final_melody.RData")
 # Convert to relative abundance
 colombia_RA <- transform_sample_counts(colombia_final, fun=function(x) x/sum(x))
 
