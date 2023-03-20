@@ -21,7 +21,7 @@ phylotree <-  read_tree(phylotreefp)
 #### Format files to be a phyloseq object ####
 ### Meta Sample data ###
 meta_phylo <- as.data.frame(meta[,-1])
-rownames(meta_phylo) <- meta$`#SampleID`
+rownames(meta_phylo) <- meta$`SampleID`
 SAMP <- sample_data(meta_phylo)
 
 ### OTU table ###
