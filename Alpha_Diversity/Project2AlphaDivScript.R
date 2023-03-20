@@ -91,8 +91,8 @@ gg_richness_young <- plot_richness(colombia_young_rare, x = "insulin_resistance"
   geom_boxplot()
 gg_richness_young
 
-ggsave(filename = "Module13/plot_richness_young.png"
-       , gg_richness
+ggsave(filename = "plot_richness_young.png"
+       , gg_richness_young
        , height=4, width=6)
 
 estimate_richness(colombia_young_rare)
@@ -102,6 +102,9 @@ gg_richness_old <- plot_richness(colombia_old_rare, x = "insulin_resistance", me
   geom_boxplot()
 gg_richness_old
 
+ggsave(filename = "plot_richness_old.png"
+       , gg_richness_old
+       , height=4, width=6)
 
 # ggpubr
 
@@ -117,12 +120,12 @@ library(phyloseq)
 # Let's do very simple plot with t-test
 plot_richness(colombia_young_rare, x = "insulin_resistance", measures="Shannon")
 # Need to extract information
-alphadiv <- estimate_richness(colombia_young_rare)
-samp_dat <- sample_data(colombia_young_rare)
-samp_dat_wdiv <- data.frame(samp_dat, alphadiv)
+alphadiv_young <- estimate_richness(colombia_young_rare)
+samp_dat_young <- sample_data(colombia_young_rare)
+samp_dat_wdiv_young <- data.frame(samp_dat_young, alphadiv_young)
 # These are equivalent:
 # t.test()
-t.test(samp_dat_wdiv$Shannon ~ samp_dat_wdiv$insulin_resistance)
+t.test(samp_dat_wdiv_young$Shannon ~ samp_dat_wdiv_young$insulin_resistance)
 
 
 # Note: you can set variances to be equal for a "classic" t-test
@@ -137,5 +140,5 @@ allCounts <- allCounts[allCounts>0]
 hist(allCounts)
 hist(log(allCounts))
 
-wilcox.test(Shannon ~ insulin_resistance, data=samp_dat_wdiv)
+wilcox.test(Shannon ~ insulin_resistance, data=samp_dat_wdiv_young)
 
