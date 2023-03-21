@@ -21,7 +21,7 @@ phylotree <-  read_tree(phylotreefp)
 #### Format files to be a phyloseq object ####
 ### Meta Sample data ###
 meta_phylo <- as.data.frame(meta[,-1])
-rownames(meta_phylo) <- meta$`#SampleID`
+rownames(meta_phylo) <- meta$SampleID
 SAMP <- sample_data(meta_phylo)
 
 ### OTU table ###
@@ -39,6 +39,28 @@ TAXONOMY <- tax_table(taxa_phylo)
 ### Make phyloseq object ###
 colombia_phyObj <- phyloseq(SAMP, OTU, TAXONOMY, phylotree)
 
+
+
+
+######### ANALYZE ##########
+# Remove non-bacterial sequences, if any
+colombia_filt <- subset_taxa(colombia_phyObj,  Domain == "d__Bacteria" & Class!="c__Chloroplast" & Family !="f__Mitochondria")
+# Remove ASVs that have less than 5 counts total
+colombia_filt_nolow <- filter_taxa(colombia_filt, function(x) sum(x)>5, prune = TRUE)
+# Remove samples with less than 100 reads
+colombia_final <- prune_samples(sample_sums(colombia_filt_nolow)>100, colombia_filt_nolow)
+
+
+# Rarefy samples
+# rngseed sets a random number. If you want to reproduce this exact analysis, you need
+# to set rngseed the same number each time
+rarecurve(t(as.data.frame(otu_table(colombia_final))), cex=0.1)
+colombia_rare <- rarefy_even_depth(colombia_final, rngseed = 1, sample.size = 500)
+
+# Convert to relative abundance
+colombia_RA <- transform_sample_counts(colombia_phyObj, fun=function(x) x/sum(x))
+
+colombia_phyObj <- colombia_RA 
 #### Differential Abundance ####
 
 #### Run indicator species analysis by Age_range 18-40 and 41-62 ####
