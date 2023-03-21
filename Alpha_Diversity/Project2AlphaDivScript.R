@@ -142,3 +142,13 @@ hist(log(allCounts))
 
 wilcox.test(Shannon ~ insulin_resistance, data=samp_dat_wdiv_young)
 
+# old population statistics
+alphadiv_old <- estimate_richness(colombia_old_rare)
+samp_dat_old <- sample_data(colombia_old_rare)
+samp_dat_wdiv_old <- data.frame(samp_dat_old, alphadiv_old)
+
+# t.test()
+t.test(samp_dat_wdiv_old$Shannon ~ samp_dat_wdiv_old$insulin_resistance)
+
+# Wilcoxon
+wilcox.test(Shannon ~ insulin_resistance, data=samp_dat_wdiv_old)
