@@ -43,22 +43,11 @@ colombia_filt_nolow <- filter_taxa(colombia_filt, function(x) sum(x)>5, prune = 
 colombia_filt_nolow_samps <- prune_samples(sample_sums(colombia_filt_nolow)>100, colombia_filt_nolow)
 colombia_final <- subset_samples(colombia_filt_nolow_samps, !is.na(insulin_resistance))
 
-##### Filter dataset by age range ####
-colombia_young <- subset_samples(colombia_final, age_range=="18_40")
-colombia_old <- subset_samples(colombia_final, age_range=="41_62")
-
-####Combine Genus ####
-#help("tax_glom")
-#data(colombia_final)
-## print the available taxonomic ranks
-#colnames(tax_table(colombia_final))
-## agglomerate at the Family taxonomic rank
-#(x1 <- tax_glom(colombia_final, taxrank="Genus") )
-## How many taxa before/after agglomeration?
-#ntaxa(colombia_final); ntaxa(x1)
-
+#### Combine Genus ####
 (genus_colombia_final <- tax_glom(colombia_final, taxrank="Genus") )
 ntaxa(colombia_final); ntaxa(genus_colombia_final)
+
+#### Filter dataset by age range ####
 genus_colombia_young <- subset_samples(genus_colombia_final, age_range=="18_40")
 genus_colombia_old <- subset_samples(genus_colombia_final, age_range=="41_62")
 
@@ -111,7 +100,7 @@ DeSeqres_insulin %>%
 ggplot(DeSeqres_young) +
   geom_point(aes(x=log2FoldChange, y=-log10(padj)))
 DeSeqres_young %>%
-  mutate(significant = padj<0.01 & abs(log2FoldChange)>2) %>%
+  mutate(significant = padj<0.05 & abs(log2FoldChange)>1.5) %>%
   ggplot() +
   geom_point(aes(x=log2FoldChange, y=-log10(padj), col=significant))
 
@@ -119,7 +108,7 @@ DeSeqres_young %>%
 ggplot(DeSeqres_old) +
   geom_point(aes(x=log2FoldChange, y=-log10(padj)))
 DeSeqres_old %>%
-  mutate(significant = padj<0.01 & abs(log2FoldChange)>2) %>%
+  mutate(significant = padj<0.05 & abs(log2FoldChange)>1.5) %>%
   ggplot() +
   geom_point(aes(x=log2FoldChange, y=-log10(padj), col=significant))
 
@@ -137,9 +126,9 @@ age_DESeq <- prune_taxa(sigASVs_age_vec,colombia_final)
 sigASVs_age <- tax_table(age_DESeq) %>% as.data.frame() %>%
   rownames_to_column(var="ASV") %>%
   right_join(sigASVs_age) %>%
-  arrange(log2FoldChange) %>%
-  mutate(Genus = make.unique(Genus)) %>%
-  mutate(Genus = factor(Genus, levels=unique(Genus)))
+  arrange(log2FoldChange) #%>%
+#  mutate(Genus = make.unique(Genus)) %>%
+ # mutate(Genus = factor(Genus, levels=unique(Genus)))
 
 #For insulin
 sigASVs_insulin <- DeSeqres_insulin %>% 
@@ -152,9 +141,9 @@ insulin_DESeq <- prune_taxa(sigASVs_insulin_vec,colombia_final)
 sigASVs_insulin <- tax_table(insulin_DESeq) %>% as.data.frame() %>%
   rownames_to_column(var="ASV") %>%
   right_join(sigASVs_insulin) %>%
-  arrange(log2FoldChange) %>%
-  mutate(Genus = make.unique(Genus)) %>%
-  mutate(Genus = factor(Genus, levels=unique(Genus)))
+  arrange(log2FoldChange) #%>%
+#  mutate(Genus = make.unique(Genus)) %>%
+#  mutate(Genus = factor(Genus, levels=unique(Genus)))
 
 #18-40 for insulin
 sigASVs_young <- DeSeqres_young %>% 
@@ -167,9 +156,9 @@ colombia_young_DESeq <- prune_taxa(sigASVs_young_vec,colombia_final)
 sigASVs_young <- tax_table(colombia_young_DESeq) %>% as.data.frame() %>%
   rownames_to_column(var="ASV") %>%
   right_join(sigASVs_young) %>%
-  arrange(log2FoldChange) %>%
-  mutate(Genus = make.unique(Genus)) %>%
-  mutate(Genus = factor(Genus, levels=unique(Genus)))
+  arrange(log2FoldChange) #%>%
+#  mutate(Genus = make.unique(Genus)) %>%
+#  mutate(Genus = factor(Genus, levels=unique(Genus)))
 
 
 #41-60 for insulin
@@ -183,36 +172,39 @@ colombia_old_DESeq <- prune_taxa(sigASVs_old_vec,colombia_final)
 sigASVs_old <- tax_table(colombia_old_DESeq) %>% as.data.frame() %>%
   rownames_to_column(var="ASV") %>%
   right_join(sigASVs_old) %>%
-  arrange(log2FoldChange) %>%
-  mutate(Genus = make.unique(Genus)) %>%
-  mutate(Genus = factor(Genus, levels=unique(Genus)))
+  arrange(log2FoldChange) #%>%
+#  mutate(Genus = make.unique(Genus)) %>%
+#  mutate(Genus = factor(Genus, levels=unique(Genus)))
 
 #### Prune phyloseq file
 
 #### log2FoldChange ####
 #For age
-ggplot(sigASVs_age) +
+sigASVs_age_uncl = sigASVs_age %>%
+  mutate(Genus = ifelse(Genus =='g__uncultured', paste(Family,'g__uncl',sep=' + '),Genus))
+ggplot(sigASVs_age_uncl) +
   geom_bar(aes(x=Genus, y=log2FoldChange), stat="identity")+
   geom_errorbar(aes(x=Genus, ymin=log2FoldChange-lfcSE, ymax=log2FoldChange+lfcSE)) +
-  theme(axis.text.x = element_text(angle=90, hjust=1, vjust=0.5))
+  theme(axis.text.x = element_text(angle= 0, hjust=0.5, vjust=0.5))
+  
 
 #For insulin
 ggplot(sigASVs_insulin) +
   geom_bar(aes(x=Genus, y=log2FoldChange), stat="identity")+
   geom_errorbar(aes(x=Genus, ymin=log2FoldChange-lfcSE, ymax=log2FoldChange+lfcSE)) +
-  theme(axis.text.x = element_text(angle=90, hjust=1, vjust=0.5))
+  theme(axis.text.x = element_text(angle=0, hjust=0.5, vjust=0.5))
 
 #18-40 for insulin
 ggplot(sigASVs_young) +
   geom_bar(aes(x=Genus, y=log2FoldChange), stat="identity")+
   geom_errorbar(aes(x=Genus, ymin=log2FoldChange-lfcSE, ymax=log2FoldChange+lfcSE)) +
-  theme(axis.text.x = element_text(angle=90, hjust=1, vjust=0.5))
+  theme(axis.text.x = element_text(angle=90, hjust=0.5, vjust=0.5))
 
 #41-62 for insulin
 ggplot(sigASVs_old) +
   geom_bar(aes(x=Genus, y=log2FoldChange), stat="identity")+
   geom_errorbar(aes(x=Genus, ymin=log2FoldChange-lfcSE, ymax=log2FoldChange+lfcSE)) +
-  theme(axis.text.x = element_text(angle=90, hjust=1, vjust=0.5))
+  theme(axis.text.x = element_text(angle=0, hjust=0.5, vjust=0.5))
 
 
 #### Combined Bar graph ####
