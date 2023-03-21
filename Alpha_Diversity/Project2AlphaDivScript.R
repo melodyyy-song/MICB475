@@ -152,3 +152,13 @@ t.test(samp_dat_wdiv_old$Shannon ~ samp_dat_wdiv_old$insulin_resistance)
 
 # Wilcoxon
 wilcox.test(Shannon ~ insulin_resistance, data=samp_dat_wdiv_old)
+
+
+##################### ggpubr ########################
+
+library(ggpubr)
+
+
+
+
+
