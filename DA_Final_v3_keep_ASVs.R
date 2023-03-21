@@ -3,7 +3,6 @@ library(tidyverse)
 library(phyloseq)
 library(vegan)
 library(DESeq2)
-library(ggplot2)
 
 ####Loading Meta Data with HOMA-IR calculated ####
 metafp <- "metadata_edit.txt"
@@ -97,7 +96,7 @@ DeSeqres_insulin %>%
 ggplot(DeSeqres_young) +
   geom_point(aes(x=log2FoldChange, y=-log10(padj)))
 DeSeqres_young %>%
-  mutate(significant = padj<0.01 & abs(log2FoldChange)>2) %>%
+  mutate(significant = padj<0.05 & abs(log2FoldChange)>1.5) %>%
   ggplot() +
   geom_point(aes(x=log2FoldChange, y=-log10(padj), col=significant))
 
@@ -105,7 +104,7 @@ DeSeqres_young %>%
 ggplot(DeSeqres_old) +
   geom_point(aes(x=log2FoldChange, y=-log10(padj)))
 DeSeqres_old %>%
-  mutate(significant = padj<0.01 & abs(log2FoldChange)>2) %>%
+  mutate(significant = padj<0.05 & abs(log2FoldChange)>1.5) %>%
   ggplot() +
   geom_point(aes(x=log2FoldChange, y=-log10(padj), col=significant))
 
@@ -115,19 +114,20 @@ sigASVs_age <- DeSeqres_age %>%
   filter(padj<0.05 & abs(log2FoldChange)>1.5) %>%
   dplyr::rename(ASV=row)
 View(sigASVs_age)
-
 #For ASV names
 sigASVs_age_vec <- sigASVs_age %>%
   pull(ASV)
-
 #Prune phyloseq file
 age_DESeq <- prune_taxa(sigASVs_age_vec,colombia_final)
-sigASVs_age <- tax_table(age_DESeq) %>% as.data.frame() %>%
+sigASVs_age_final <- tax_table(age_DESeq) %>% as.data.frame() %>%
   rownames_to_column(var="ASV") %>%
   right_join(sigASVs_age) %>%
   arrange(log2FoldChange) %>%
+  mutate(Genus = ifelse(Genus =='g__uncultured', paste(Family,'g__uncl',sep=' + '),Genus)) %>%
   mutate(Genus = make.unique(Genus)) %>%
-  mutate(Genus = factor(Genus, levels=unique(Genus)))
+  mutate(Genus = factor(Genus, levels=unique(Genus))) %>%
+  filter(!is.na(Genus))
+  
 
 #For insulin
 sigASVs_insulin <- DeSeqres_insulin %>% 
@@ -137,12 +137,14 @@ View(sigASVs_insulin)
 sigASVs_insulin_vec <- sigASVs_insulin %>%
   pull(ASV)
 insulin_DESeq <- prune_taxa(sigASVs_insulin_vec,colombia_final)
-sigASVs_insulin <- tax_table(insulin_DESeq) %>% as.data.frame() %>%
+sigASVs_insulin_final <- tax_table(insulin_DESeq) %>% as.data.frame() %>%
   rownames_to_column(var="ASV") %>%
   right_join(sigASVs_insulin) %>%
   arrange(log2FoldChange) %>%
+  mutate(Genus = ifelse(Genus =='g__uncultured', paste(Family,'g__uncl',sep=' + '),Genus)) %>%
   mutate(Genus = make.unique(Genus)) %>%
-  mutate(Genus = factor(Genus, levels=unique(Genus)))
+  mutate(Genus = factor(Genus, levels=unique(Genus)))%>%
+  filter(!is.na(Genus))
 
 #18-40 for insulin
 sigASVs_young <- DeSeqres_young %>% 
@@ -152,13 +154,14 @@ View(sigASVs_young)
 sigASVs_young_vec <- sigASVs_young %>%
   pull(ASV)
 colombia_young_DESeq <- prune_taxa(sigASVs_young_vec,colombia_final)
-sigASVs_young <- tax_table(colombia_young_DESeq) %>% as.data.frame() %>%
+sigASVs_young_final <- tax_table(colombia_young_DESeq) %>% as.data.frame() %>%
   rownames_to_column(var="ASV") %>%
   right_join(sigASVs_young) %>%
   arrange(log2FoldChange) %>%
+  mutate(Genus = ifelse(Genus =='g__uncultured', paste(Family,'g__uncl',sep=' + '),Genus)) %>%
   mutate(Genus = make.unique(Genus)) %>%
-  mutate(Genus = factor(Genus, levels=unique(Genus)))
-sigASVs_young_table <- table(sample_data(sigASVs_young)$Genus)
+  mutate(Genus = factor(Genus, levels=unique(Genus)))%>%
+  filter(!is.na(Genus))
 
 #41-60 for insulin
 sigASVs_old <- DeSeqres_old %>% 
@@ -168,49 +171,103 @@ View(sigASVs_old)
 sigASVs_old_vec <- sigASVs_old %>%
   pull(ASV)
 colombia_old_DESeq <- prune_taxa(sigASVs_old_vec,colombia_final)
-sigASVs_old <- tax_table(colombia_old_DESeq) %>% as.data.frame() %>%
+sigASVs_old_final <- tax_table(colombia_old_DESeq) %>% as.data.frame() %>%
   rownames_to_column(var="ASV") %>%
   right_join(sigASVs_old) %>%
   arrange(log2FoldChange) %>%
+  mutate(Genus = ifelse(Genus =='g__uncultured', paste(Family,'g__uncl',sep=' + '),Genus)) %>%
   mutate(Genus = make.unique(Genus)) %>%
-  mutate(Genus = factor(Genus, levels=unique(Genus)))
-sigASVs_old_table <- table(sample_data(sigASVs_old)$Genus)
-
-#### Prune phyloseq file
+  mutate(Genus = factor(Genus, levels=unique(Genus)))%>%
+  filter(!is.na(Genus))
 
 #### log2FoldChange ####
 #For age
-ggplot(sigASVs_age) +
+ggplot(sigASVs_age_final) +
   geom_bar(aes(x=Genus, y=log2FoldChange), stat="identity")+
   geom_errorbar(aes(x=Genus, ymin=log2FoldChange-lfcSE, ymax=log2FoldChange+lfcSE)) +
+  xlab("Genus of significant ASVs") +
   theme(axis.text.x = element_text(angle=90, hjust=1, vjust=0.5))
 
 #For insulin
-ggplot(sigASVs_insulin) +
+ggplot(sigASVs_insulin_final) +
   geom_bar(aes(x=Genus, y=log2FoldChange), stat="identity")+
   geom_errorbar(aes(x=Genus, ymin=log2FoldChange-lfcSE, ymax=log2FoldChange+lfcSE)) +
+  xlab("Genus of significant ASVs") +
   theme(axis.text.x = element_text(angle=90, hjust=1, vjust=0.5))
 
 #18-40 for insulin
-young_plot <- ggplot(sigASVs_young) +
+ggplot(sigASVs_young_final) +
   geom_bar(aes(x=Genus, y=log2FoldChange), stat="identity")+
   geom_errorbar(aes(x=Genus, ymin=log2FoldChange-lfcSE, ymax=log2FoldChange+lfcSE)) +
+  xlab("Genus of significant ASVs") +
   theme(axis.text.x = element_text(angle=90, hjust=1, vjust=0.5))
-view(sigASVs_young_table)
-
 
 #41-62 for insulin
-ggplot(sigASVs_old) +
+ggplot(sigASVs_old_final) +
   geom_bar(aes(x=Genus, y=log2FoldChange), stat="identity")+
   geom_errorbar(aes(x=Genus, ymin=log2FoldChange-lfcSE, ymax=log2FoldChange+lfcSE)) +
+  xlab("Genus of significant ASVs") +
   theme(axis.text.x = element_text(angle=90, hjust=1, vjust=0.5))
 
 #### Combined Bar graph ####
 ggplot() +
-  geom_bar(data = sigASVs_old, aes(x=Genus, y=log2FoldChange), stat="identity", fill="lightblue")+
-  geom_errorbar(data = sigASVs_old, aes(x=Genus, ymin=log2FoldChange-lfcSE, ymax=log2FoldChange+lfcSE)) +
-  geom_bar(data = sigASVs_young, aes(x=Genus, y=log2FoldChange), stat="identity", fill="lightgreen")+
-  geom_errorbar(data = sigASVs_young, aes(x=Genus, ymin=log2FoldChange-lfcSE, ymax=log2FoldChange+lfcSE)) +
+  geom_bar(data = sigASVs_old_final, aes(x=Genus, y=log2FoldChange), stat="identity", fill="lightblue")+
+  geom_errorbar(data = sigASVs_old_final, aes(x=Genus, ymin=log2FoldChange-lfcSE, ymax=log2FoldChange+lfcSE)) +
+  geom_bar(data = sigASVs_young_final, aes(x=Genus, y=log2FoldChange), stat="identity", fill="lightgreen")+
+  geom_errorbar(data = sigASVs_young_final, aes(x=Genus, ymin=log2FoldChange-lfcSE, ymax=log2FoldChange+lfcSE)) +
   theme(axis.text.x = element_text(angle=90, hjust=1, vjust=0.5)) +
   ylab("Log2 Fold Change") + 
+  xlab("Genus of significant ASVs") +
   coord_flip()
+
+####Counts of ASVs####
+#For age
+sigASVs_age_for_table <- tax_table(age_DESeq) %>% as.data.frame() %>%
+  rownames_to_column(var="ASV") %>%
+  right_join(sigASVs_age) %>%
+  arrange(log2FoldChange) %>%
+  mutate(Genus = ifelse(Genus =='g__uncultured', paste(Family,'g__uncl',sep=' + '),Genus)) %>%
+  mutate(log2FoldChange = ifelse(log2FoldChange <0, paste ('-'),paste ('+'))) %>%
+  filter(!is.na(Genus))
+sigASVs_age_table <- as.data.frame(table(sigASVs_age_for_table[c("Genus", "log2FoldChange")]))
+sigASVs_age_table <- sigASVs_age_table[sigASVs_age_table$Freq %in% 1:10, ] %>%
+  arrange(Genus)
+view(sigASVs_age_table)
+
+#For insulin
+sigASVs_insulin_for_table <- tax_table(insulin_DESeq) %>% as.data.frame() %>%
+  rownames_to_column(var="ASV") %>%
+  right_join(sigASVs_insulin) %>%
+  arrange(log2FoldChange) %>%
+  mutate(Genus = ifelse(Genus =='g__uncultured', paste(Family,'g__uncl',sep=' + '),Genus)) %>%
+  mutate(log2FoldChange = ifelse(log2FoldChange <0, paste ('-'),paste ('+'))) %>%
+  filter(!is.na(Genus))
+sigASVs_insulin_table <- as.data.frame(table(sigASVs_insulin_for_table[c("Genus", "log2FoldChange")]))
+sigASVs_insulin_table <- sigASVs_insulin_table[sigASVs_insulin_table$Freq %in% 1:10, ] %>%
+  arrange(Genus)
+view(sigASVs_insulin_table)
+#18-40 for insulin
+sigASVs_young_for_table <- tax_table(colombia_young_DESeq) %>% as.data.frame() %>%
+  rownames_to_column(var="ASV") %>%
+  right_join(sigASVs_young) %>%
+  arrange(log2FoldChange) %>%
+  mutate(Genus = ifelse(Genus =='g__uncultured', paste(Family,'g__uncl',sep=' + '),Genus)) %>%
+  mutate(log2FoldChange = ifelse(log2FoldChange <0, paste ('-'),paste ('+'))) %>%
+  filter(!is.na(Genus))
+sigASVs_young_table <- as.data.frame(table(sigASVs_young_for_table[c("Genus", "log2FoldChange")]))
+sigASVs_young_table <- sigASVs_young_table[sigASVs_young_table$Freq %in% 1:10, ] %>%
+  arrange(Genus)
+view(sigASVs_young_table)
+
+#41-62 for insulin
+sigASVs_old_for_table <- tax_table(colombia_old_DESeq) %>% as.data.frame() %>%
+  rownames_to_column(var="ASV") %>%
+  right_join(sigASVs_old) %>%
+  arrange(log2FoldChange) %>%
+  mutate(Genus = ifelse(Genus =='g__uncultured', paste(Family,'g__uncl',sep=' + '),Genus)) %>%
+  mutate(log2FoldChange = ifelse(log2FoldChange <0, paste ('-'),paste ('+'))) %>%
+  filter(!is.na(Genus))
+sigASVs_old_table <- as.data.frame(table(sigASVs_old_for_table[c("Genus", "log2FoldChange")]))
+sigASVs_old_table <- sigASVs_old_table[sigASVs_old_table$Freq %in% 1:10, ] %>%
+  arrange(Genus)
+view(sigASVs_old_table)
