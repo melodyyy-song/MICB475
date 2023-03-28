@@ -201,3 +201,4 @@ ggsave(filename = "plot_richness_old_signifvector.png"
 ggsave(filename = "plot_richness_old.png"
        , gg_richness_old
        , height=4, width=6)
+
