@@ -4,6 +4,7 @@ library(phyloseq)
 library(vegan)
 library(DESeq2)
 library(ggpubr)
+library(microbiome)
 
 ####Loading Meta Data with HOMA-IR calculated ####
 metafp <- "metadata_edit.txt"
@@ -116,7 +117,7 @@ DeSeqres_old %>%
 #### Table of results of significant ASVs####
 #for age
 sigASVs_age <- DeSeqres_age %>% 
-  filter(padj<0.05 & abs(log2FoldChange)>1.5) %>%
+  filter(padj>0 & abs(log2FoldChange)>1.5) %>%
   dplyr::rename(ASV=row)
 View(sigASVs_age)
 #For ASV names
@@ -129,7 +130,7 @@ sigASVs_age <- tax_table(age_DESeq) %>% as.data.frame() %>%
   right_join(sigASVs_age) %>%
   arrange(log2FoldChange) #%>%
 #  mutate(Genus = make.unique(Genus)) %>%
- # mutate(Genus = factor(Genus, levels=unique(Genus)))
+# mutate(Genus = factor(Genus, levels=unique(Genus)))
 
 #For insulin
 sigASVs_insulin <- DeSeqres_insulin %>% 
@@ -148,7 +149,7 @@ sigASVs_insulin <- tax_table(insulin_DESeq) %>% as.data.frame() %>%
 
 #18-40 for insulin
 sigASVs_young <- DeSeqres_young %>% 
-  filter(padj<0.05 & abs(log2FoldChange)>1.5) %>%
+  filter(padj<0.05 & abs(log2FoldChange)>1) %>%
   dplyr::rename(ASV=row)
 View(sigASVs_young)
 sigASVs_young_vec <- sigASVs_young %>%
@@ -164,7 +165,7 @@ sigASVs_young <- tax_table(colombia_young_DESeq) %>% as.data.frame() %>%
 
 #41-60 for insulin
 sigASVs_old <- DeSeqres_old %>% 
-  filter(padj<0.05 & abs(log2FoldChange)>1.5) %>%
+  filter(padj<0.05 & abs(log2FoldChange)>1 ) %>%
   dplyr::rename(ASV=row)
 View(sigASVs_old)
 sigASVs_old_vec <- sigASVs_old %>%
@@ -187,7 +188,7 @@ ggplot(sigASVs_age_uncl) +
   geom_bar(aes(x=Genus, y=log2FoldChange), stat="identity")+
   geom_errorbar(aes(x=Genus, ymin=log2FoldChange-lfcSE, ymax=log2FoldChange+lfcSE)) +
   theme(axis.text.x = element_text(angle= 0, hjust=0.5, vjust=0.5))
-  
+
 
 #For insulin
 ggplot(sigASVs_insulin) +
@@ -196,25 +197,59 @@ ggplot(sigASVs_insulin) +
   theme(axis.text.x = element_text(angle=0, hjust=0.5, vjust=0.5))
 
 #18-40 for insulin
+sigASVs_young = sigASVs_young %>%
+  mutate(Genus = ifelse(Genus =='g__uncultured', paste(Family,'g__uncl',sep=' + '),Genus)) %>%
+  mutate(highlight_young = ifelse(abs(log2FoldChange)>1.5, "YT", "YF"))
 ggplot(sigASVs_young) +
-  geom_bar(aes(x=Genus, y=log2FoldChange), stat="identity")+
+  geom_bar(aes(x=Genus, y=log2FoldChange, fill=highlight_young), stat="identity")+
   geom_errorbar(aes(x=Genus, ymin=log2FoldChange-lfcSE, ymax=log2FoldChange+lfcSE)) +
-  theme(axis.text.x = element_text(angle=90, hjust=0.5, vjust=0.5))
+  scale_fill_manual(values = c("YT" = "lightgreen","YF" = "gray")) +
+  theme(axis.text.x = element_text(hjust=0.5, vjust=0.5), legend.position = "none") +
+  ylab("log2FoldChange 
+       (insulin-sensitive/insulin-resistant)") +
+  coord_flip()
 
 #41-62 for insulin
+sigASVs_old = sigASVs_old %>%
+  mutate(Genus = ifelse(Genus =='g__uncultured', paste(Family,'g__uncl',sep=' + '),Genus)) %>%
+  mutate(highlight_old = ifelse(abs(log2FoldChange)>1.5, "OT", "OF"))
 ggplot(sigASVs_old) +
-  geom_bar(aes(x=Genus, y=log2FoldChange), stat="identity")+
+  geom_bar(aes(x=Genus, y=log2FoldChange, fill = highlight_old), stat="identity") +
   geom_errorbar(aes(x=Genus, ymin=log2FoldChange-lfcSE, ymax=log2FoldChange+lfcSE)) +
-  theme(axis.text.x = element_text(angle=0, hjust=0.5, vjust=0.5))
+  scale_fill_manual(values = c("OT" = "lightblue","OF" = "gray")) +
+  ylab("log2FoldChange (insulin-sensitive/insulin-resistant)") +
+  theme(axis.text.x = element_text(hjust=0.5, vjust=0.5), legend.position = "none") +
+  ylab("log2FoldChange 
+       (insulin-sensitive/insulin-resistant)") +
+  coord_flip()
 
 
 #### Combined Bar graph ####
 ggplot() +
-  geom_bar(data = sigASVs_old, aes(x=Genus, y=log2FoldChange), stat="identity", fill="lightblue")+
+  geom_bar(data = sigASVs_old, aes(x=Genus, y=log2FoldChange,fill=highlight_old), stat="identity")+
   geom_errorbar(data = sigASVs_old, aes(x=Genus, ymin=log2FoldChange-lfcSE, ymax=log2FoldChange+lfcSE)) +
-  geom_bar(data = sigASVs_young, aes(x=Genus, y=log2FoldChange), stat="identity", fill="lightgreen")+
+  geom_bar(data = sigASVs_young, aes(x=Genus, y=log2FoldChange, fill=highlight_young), stat="identity")+
   geom_errorbar(data = sigASVs_young, aes(x=Genus, ymin=log2FoldChange-lfcSE, ymax=log2FoldChange+lfcSE)) +
   theme(axis.text.x = element_text(angle=90, hjust=1, vjust=0.5)) +
   ylab("Log2 Fold Change") + 
+  scale_fill_manual(values = c("OT" = "lightblue","OF" = "gray",
+                               "YT" = "lightgreen", "YF" = "gray")) +
+  ylab("log2FoldChange (insulin-sensitive/insulin-resistant)") +
   coord_flip()
 
+####Relative Abundance Boxplots####
+genus_colombia_all <- genus_colombia_final %>%
+  transform("compositional") %>% 
+  psmelt()
+#list of significant genuses (to match barplot)
+genus_of_interest_old <- sigASVs_old$Genus
+genus_of_interest_young <- sigASVs_young$Genus
+#Boxplots
+genus_colombia_all %>% filter(Genus %in% genus_of_interest_old) %>%
+  ggplot(aes(Genus,Abundance,fill=insulin_resistance)) +
+  geom_boxplot() +
+  coord_flip()
+genus_colombia_all %>% filter(Genus %in% genus_of_interest_young) %>%
+  ggplot(aes(Genus,Abundance,fill=insulin_resistance)) +
+  geom_boxplot() +
+  coord_flip()
