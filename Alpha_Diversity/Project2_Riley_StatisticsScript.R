@@ -45,44 +45,44 @@ wilcox.test(Shannon ~ insulin_resistance, data=samp_dat_wdiv_old)
 # adding p-values to boxplots using wilcoxon test
 
 # young population p-value + boxplots
-gg_richness_young <- plot_richness(colombia_young_rare, x = "insulin_resistance", color="insulin_resistance", measures = c("Observed","Shannon","Chao1")) +
+gg_richness_young <- plot_richness(colombia_young_rare, x = "insulin_resistance", color="insulin_resistance", measures = "Shannon") +
   xlab("Insulin Resistance") +
   geom_boxplot()
 gg_richness_young
 
-gg_richness_young_pvalue <- gg_richness_young + stat_compare_means()
+gg_richness_young_pvalue <- gg_richness_young + stat_compare_means(label.y = 5)
 gg_richness_young_pvalue
 
 ggsave(filename = "plot_richness_young_pvalue.png"
        , gg_richness_young_pvalue
-       , height=5, width=8)
+       , height=6, width=4)
 
-gg_richness_young_signifvector <- gg_richness_young + stat_compare_means(label = "p.signif", label.x = 1.5)
+gg_richness_young_signifvector <- gg_richness_young + stat_compare_means(label = "p.signif", label.x = 1.5) + stat_compare_means(label.y = 5)
 gg_richness_young_signifvector
 
 ggsave(filename = "plot_richness_young_signifvector.png"
        , gg_richness_young_signifvector
-       , height=5, width=8)
+       , height=6, width=4)
 
 # old population
-gg_richness_old <- plot_richness(colombia_old_rare, x = "insulin_resistance", measures = c("Observed","Shannon","Chao1")) +
+gg_richness_old <- plot_richness(colombia_old_rare, x = "insulin_resistance", color="insulin_resistance", measures = "Shannon") +
   xlab("Insulin Resistance") +
   geom_boxplot()
 gg_richness_old
 
-gg_richness_old_pvalue <- gg_richness_old + stat_compare_means()
+gg_richness_old_pvalue <- gg_richness_old + stat_compare_means(label.y = 5)
 gg_richness_old_pvalue
 
 ggsave(filename = "plot_richness_old_pvalue.png"
        , gg_richness_old_pvalue
-       , height=5, width=8)
+       , height=6, width=4)
 
-gg_richness_old_signifvector <- gg_richness_old + stat_compare_means(label = "p.signif", label.x = 1.5)
+gg_richness_old_signifvector <- gg_richness_old + stat_compare_means(label = "p.signif", label.x = 1.5) + stat_compare_means(label.y = 5)
 gg_richness_old_signifvector
 
 ggsave(filename = "plot_richness_old_signifvector.png"
        , gg_richness_old_signifvector
-       , height=5, width=8)
+       , height=6, width=4)
 
 
 
