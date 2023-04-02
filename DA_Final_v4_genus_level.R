@@ -239,17 +239,28 @@ ggplot() +
 
 ####Relative Abundance Boxplots####
 genus_colombia_all <- genus_colombia_final %>%
-  transform("compositional") %>% 
+  microbiome::transform("compositional") %>% 
   psmelt()
 #list of significant genuses (to match barplot)
 genus_of_interest_old <- sigASVs_old$Genus
 genus_of_interest_young <- sigASVs_young$Genus
 #Boxplots
 genus_colombia_all %>% filter(Genus %in% genus_of_interest_old) %>%
+  mutate(Abundance = Abundance + min(.$Abundance[.$Abundance>0])/2) %>%
   ggplot(aes(Genus,Abundance,fill=insulin_resistance)) +
   geom_boxplot() +
-  coord_flip()
+  coord_flip() +
+  scale_y_log10() +
+  facet_wrap("age_range")
+genus_colombia_all %>% filter(Genus %in% genus_of_interest_old) %>%
+  mutate(Abundance = Abundance + min(.$Abundance[.$Abundance>0])/2) %>%
+  ggplot(aes(Genus,Abundance,fill=insulin_resistance)) +
+  geom_boxplot() +
+  coord_flip() +
+  scale_y_log10()
 genus_colombia_all %>% filter(Genus %in% genus_of_interest_young) %>%
+  mutate(Abundance = Abundance + min(.$Abundance[.$Abundance>0])/2) %>%
   ggplot(aes(Genus,Abundance,fill=insulin_resistance)) +
   geom_boxplot() +
-  coord_flip()
+  coord_flip() +
+  scale_y_log10()

@@ -257,6 +257,10 @@ sigASVs_young_for_table <- tax_table(colombia_young_DESeq) %>% as.data.frame() %
 sigASVs_young_table <- as.data.frame(table(sigASVs_young_for_table[c("Genus", "log2FoldChange")]))
 sigASVs_young_table <- sigASVs_young_table[sigASVs_young_table$Freq %in% 1:10, ] %>%
   arrange(Genus)
+colnames(sigASVs_young_table)[3] <- "young" 
+sigASVs_young_table <- sigASVs_young_table %>%
+  add_column(empty_column = NA)
+colnames(sigASVs_young_table)[4] <- "old"
 view(sigASVs_young_table)
 
 #41-62 for insulin
@@ -270,4 +274,14 @@ sigASVs_old_for_table <- tax_table(colombia_old_DESeq) %>% as.data.frame() %>%
 sigASVs_old_table <- as.data.frame(table(sigASVs_old_for_table[c("Genus", "log2FoldChange")]))
 sigASVs_old_table <- sigASVs_old_table[sigASVs_old_table$Freq %in% 1:10, ] %>%
   arrange(Genus)
+sigASVs_old_table <- sigASVs_old_table %>%
+  add_column(empty_column = NA)
+colnames(sigASVs_old_table)[3] <- "old"
+colnames(sigASVs_old_table)[4] <- "young"
 view(sigASVs_old_table)
+
+total_table <- rbind(sigASVs_young_table,sigASVs_old_table) %>%
+  arrange(log2FoldChange)
+view(total_table)
+total_table <- merge(sigASVs_young_table, sigASVs_old_table) %>%
+  arrange(log2FoldChange)
