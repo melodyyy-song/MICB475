@@ -152,3 +152,51 @@ t.test(samp_dat_wdiv_old$Shannon ~ samp_dat_wdiv_old$insulin_resistance)
 
 # Wilcoxon
 wilcox.test(Shannon ~ insulin_resistance, data=samp_dat_wdiv_old)
+
+
+##################### ggpubr ########################
+
+library(ggpubr)
+
+gg_richness_young <- plot_richness(colombia_young_rare, x = "insulin_resistance", measures = c("Observed","Shannon","Chao1")) +
+  xlab("Insulin Resistance") +
+  geom_boxplot()
+gg_richness_young
+
+gg_richness_young_pvalue <- gg_richness_young + stat_compare_means()
+gg_richness_young_pvalue
+
+ggsave(filename = "plot_richness_young_pvalue.png"
+       , gg_richness_young_pvalue
+       , height=5, width=8)
+
+gg_richness_young_signifvector <- gg_richness_young + stat_compare_means(label = "p.signif", label.x = 1.5)
+gg_richness_young_signifvector
+
+ggsave(filename = "plot_richness_young_signifvector.png"
+       , gg_richness_young_signifvector
+       , height=5, width=8)
+
+# old population
+gg_richness_old <- plot_richness(colombia_old_rare, x = "insulin_resistance", measures = c("Observed","Shannon","Chao1")) +
+  xlab("Insulin Resistance") +
+  geom_boxplot()
+gg_richness_old
+
+gg_richness_old_pvalue <- gg_richness_old + stat_compare_means()
+gg_richness_old_pvalue
+
+ggsave(filename = "plot_richness_old_pvalue.png"
+       , gg_richness_old_pvalue
+       , height=5, width=8)
+
+gg_richness_old_signifvector <- gg_richness_old + stat_compare_means(label = "p.signif", label.x = 1.5)
+gg_richness_old_signifvector
+
+ggsave(filename = "plot_richness_old_signifvector.png"
+       , gg_richness_old_signifvector
+       , height=5, width=8)
+
+
+
+
