@@ -5,6 +5,7 @@ library(vegan)
 library(DESeq2)
 library(ggpubr)
 library(microbiome)
+library(ggVennDiagram)
 
 ####Loading Meta Data with HOMA-IR calculated ####
 metafp <- "metadata_edit.txt"
@@ -290,4 +291,7 @@ ggarrange(combined_bar_plot ,
            ncol = 2,
            nrow = 3,
            widths = c(1.5,1))
+
+####VENN DIAGRAM####
+
  
