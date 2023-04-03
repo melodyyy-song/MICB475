@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+#### HEAD
 #### Load packages ####
 library(tidyverse)
 library(phyloseq)
