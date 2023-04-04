@@ -294,4 +294,36 @@ ggarrange(combined_bar_plot ,
 
 ####VENN DIAGRAM####
 
- 
+colombia_RA <- transform_sample_counts(colombia_final, fun=function(x) x/sum(x))
+# Filter dataset by age range
+colombia_young_RA <- subset_samples(colombia_RA, age_range=="18_40")
+colombia_old_RA <- subset_samples(colombia_RA, age_range=="41_62")
+
+####Core Microbiome for young Insulin sensitivity####
+colombia_young_IR <- subset_samples(colombia_young_RA, insulin_resistance=="yes")
+colombia_young_IR_Neg <- subset_samples(colombia_young_RA, insulin_resistance=="no")
+
+young_IR_list <- core_members(colombia_young_IR, detection=0, prevalence = 0.5)
+young_IR_Neg_list <- core_members(colombia_young_IR_Neg, detection=0, prevalence = 0.5)
+list(Young_IR = young_IR_list, Young_IR_Neg = young_IR_Neg_list)
+
+ggVennDiagram(x=list(Young_IR = young_IR_list, Young_IR_Neg = young_IR_Neg_list)
+              , filename = "venndiagram_young_and_old.png", output=TRUE) +
+  labs(fill="Count") 
+
+####Core Microbiome for old Insulin sensitivity####
+colombia_old_IR <- subset_samples(colombia_old_RA, insulin_resistance=="yes")
+colombia_old_IR_Neg <- subset_samples(colombia_old_RA, insulin_resistance=="no")
+
+old_IR_list <- core_members(colombia_old_IR, detection=0.001, prevalence = 0.5)
+old_IR_Neg_list <- core_members(colombia_old_IR_Neg, detection=0.001, prevalence = 0.5)
+
+list(old_IR = old_IR_list, old_IR_Neg = old_IR_Neg_list)
+
+ggVennDiagram(x=list(old_IR = old_IR_list, old_IR_Neg = old_IR_Neg_list)
+              , filename = "venndiagram_young_and_old.png", output=TRUE) +
+  labs(fill="Count")
+
+#The "core microbiome" is traditionally defined using a combination of prevalence and abundance thresholds
+#Common thresholds for abundance include: 0 (presence/absence), 0.001 (filter out rare), and 0.01 (keep only abundant)
+#Common thresholds for prevalence include: 0 (present at least once), 0.5 (present in more than half), and 0.8-0.9 (present in most samples, but allows outliers to exist)
