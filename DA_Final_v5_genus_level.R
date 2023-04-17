@@ -164,8 +164,10 @@ list(sigASVs_old_vec2)
 young_bar_plot <- ggplot(sigASVs_young2) +
   geom_bar(aes(x=Genus, y=log2FoldChange, fill=highlight_young), stat="identity")+
   geom_errorbar(aes(x=Genus, ymin=log2FoldChange-lfcSE, ymax=log2FoldChange+lfcSE)) +
-  scale_fill_manual(values = c("YT" = "lightgreen","YF" = "gray")) +
-  theme(axis.text.x = element_text(hjust=0.5, vjust=0.5), legend.position = "none") +
+  scale_fill_manual(values = c("YT" = "lightgreen","YF" = "gray"),
+                    name = "Significance (18-40 years)",
+                    labels = c("no", "yes")) +
+  theme(axis.text.x = element_text(hjust=0.5, vjust=0.5)) +
   ylab("log2FoldChange 
        (insulin-resistant/insulin-sensitive)") +
   coord_flip()
@@ -175,10 +177,12 @@ young_bar_plot
 old_bar_plot <- ggplot(sigASVs_old2) +
   geom_bar(aes(x=Genus, y=log2FoldChange, fill = highlight_old), stat="identity") +
   geom_errorbar(aes(x=Genus, ymin=log2FoldChange-lfcSE, ymax=log2FoldChange+lfcSE)) +
-  scale_fill_manual(values = c("OT" = "lightblue","OF" = "gray")) +
+  scale_fill_manual(values = c("OT" = "lightblue","OF" = "gray"), 
+                               name = "Significance (41-62 years)",
+                               labels = c("no", "yes")) +
   ylab("log2FoldChange 
        (insulin-resistant/insulin-sensitive)") +
-  theme(axis.text.x = element_text(hjust=0.5, vjust=0.5), legend.position = "none") +
+  theme(axis.text.x = element_text(hjust=0.5, vjust=0.5) ) +
   coord_flip()
 old_bar_plot
 
@@ -244,7 +248,9 @@ old_box_plot <- list_genus_colombia_old %>% filter(OTU %in% ASV_of_interest_old)
   ggplot(aes(Genus,Abundance,fill=insulin_resistance)) +
   geom_boxplot() +
   coord_flip() +
-  scale_y_log10() 
+  scale_y_log10() +
+  ylab("
+       Abundance")
 old_box_plot
 
 young_box_plot <- list_genus_colombia_young %>% filter(OTU %in% ASV_of_interest_young) %>%
@@ -253,7 +259,9 @@ young_box_plot <- list_genus_colombia_young %>% filter(OTU %in% ASV_of_interest_
   ggplot(aes(Genus,Abundance,fill=insulin_resistance)) +
   geom_boxplot() +
   coord_flip() +
-  scale_y_log10()
+  scale_y_log10()+
+  ylab("
+       Abundance")
  young_box_plot
  
 blank_box_plot <- list_genus_colombia_young %>% filter(OTU %in% ASV_of_interest_young) %>%
@@ -292,6 +300,16 @@ ggarrange(combined_bar_plot ,
            nrow = 3,
            widths = c(1.5,1))
 
+#Version Final
+ggarrange(young_bar_plot + rremove("y.ticks"),
+          young_box_plot + rremove("y.text") + rremove("ylab") +rremove("y.ticks"),
+          old_bar_plot, #+ rremove("y.text") + rremove("ylab") +rremove("y.ticks"),
+          old_box_plot + rremove("y.text") + rremove("ylab") +rremove("y.ticks"),
+          labels = "AUTO",
+          ncol = 2,
+          nrow = 2,
+          widths = c(1.5,1),
+          legend = "top")
 ####VENN DIAGRAM####
 
 colombia_RA <- transform_sample_counts(colombia_final, fun=function(x) x/sum(x))
@@ -303,27 +321,38 @@ colombia_old_RA <- subset_samples(colombia_RA, age_range=="41_62")
 colombia_young_IR <- subset_samples(colombia_young_RA, insulin_resistance=="yes")
 colombia_young_IR_Neg <- subset_samples(colombia_young_RA, insulin_resistance=="no")
 
-young_IR_list <- core_members(colombia_young_IR, detection=0, prevalence = 0.5)
-young_IR_Neg_list <- core_members(colombia_young_IR_Neg, detection=0, prevalence = 0.5)
+young_IR_list <- core_members(colombia_young_IR, detection=0.001, prevalence = 0.3)
+young_IR_Neg_list <- core_members(colombia_young_IR_Neg, detection=0.001, prevalence = 0.3)
 list(Young_IR = young_IR_list, Young_IR_Neg = young_IR_Neg_list)
 
-ggVennDiagram(x=list(Young_IR = young_IR_list, Young_IR_Neg = young_IR_Neg_list)
+young_venn <- ggVennDiagram(x=list("Insulin Sensitive" = young_IR_Neg_list, "Insulin Resistant" = young_IR_list)
               , filename = "venndiagram_young_and_old.png", output=TRUE) +
-  labs(fill="Count") 
+  labs(fill="Count") +
+  scale_fill_distiller(palette = "Blues")+
+  ggtitle("Young Age Group (18-40)")+
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
 
 ####Core Microbiome for old Insulin sensitivity####
 colombia_old_IR <- subset_samples(colombia_old_RA, insulin_resistance=="yes")
 colombia_old_IR_Neg <- subset_samples(colombia_old_RA, insulin_resistance=="no")
 
-old_IR_list <- core_members(colombia_old_IR, detection=0.001, prevalence = 0.5)
-old_IR_Neg_list <- core_members(colombia_old_IR_Neg, detection=0.001, prevalence = 0.5)
+old_IR_list <- core_members(colombia_old_IR, detection=0.001, prevalence = 0.3)
+old_IR_Neg_list <- core_members(colombia_old_IR_Neg, detection=0.001, prevalence = 0.3)
 
 list(old_IR = old_IR_list, old_IR_Neg = old_IR_Neg_list)
 
-ggVennDiagram(x=list(old_IR = old_IR_list, old_IR_Neg = old_IR_Neg_list)
+old_venn <- ggVennDiagram(x=list("Insulin Sensitive" = old_IR_Neg_list, "Insulin Resistant" = old_IR_list)
               , filename = "venndiagram_young_and_old.png", output=TRUE) +
-  labs(fill="Count")
+  labs(fill="Count")+
+  scale_fill_distiller(palette = "Blues")+
+  ggtitle("Old Age Group (41-62)")+
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
 
+ggarrange(young_venn,
+          old_venn,
+          common.legend = TRUE,
+          legend = "right",
+          labels = "AUTO")
 #The "core microbiome" is traditionally defined using a combination of prevalence and abundance thresholds
 #Common thresholds for abundance include: 0 (presence/absence), 0.001 (filter out rare), and 0.01 (keep only abundant)
 #Common thresholds for prevalence include: 0 (present at least once), 0.5 (present in more than half), and 0.8-0.9 (present in most samples, but allows outliers to exist)
