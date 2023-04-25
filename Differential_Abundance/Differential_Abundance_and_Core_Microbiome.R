@@ -140,7 +140,8 @@ sigASVs_young2 <- tax_table(colombia_young_DESeq2) %>% as.data.frame() %>%
   right_join(sigASVs_young2) %>%
   arrange(log2FoldChange) %>%
   mutate(Genus = ifelse(Genus =='g__uncultured', paste(Family,'g__uncl',sep=' + '),Genus)) %>%
-  mutate(highlight_young = ifelse(abs(log2FoldChange)>1.5, "YT", "YF"))
+  mutate(highlight_young = ifelse(abs(log2FoldChange)>1.5, "YT", "YF")) %>%
+  mutate(Genus = ifelse(Genus =='g__Muribaculaceae', paste(Family, 'g__uncl', sep=' + '), Genus))
 
 #List of sigASVs_old with all ASVs
 sigASVs_old2 <- DeSeqres_old %>% 
@@ -154,7 +155,9 @@ sigASVs_old2 <- tax_table(colombia_old_DESeq2) %>% as.data.frame() %>%
   right_join(sigASVs_old2) %>%
   arrange(log2FoldChange) %>%
   mutate(Genus = ifelse(Genus =='g__uncultured', paste(Family,'g__uncl',sep=' + '),Genus)) %>%
-  mutate(highlight_old = ifelse(abs(log2FoldChange)>1.5, "OT", "OF"))
+  mutate(highlight_old = ifelse(abs(log2FoldChange)>1.5, "OT", "OF")) %>%
+  mutate(Genus = ifelse(Genus =='g__Muribaculaceae', paste(Family, 'g__uncl', sep=' + '), Genus))
+#There was an error saying that there was a genus Miribaculaeae when it was uncultured so this code replaces the error
 
 #### Plotting log2FoldChange ####
 #18-40 for insulin
