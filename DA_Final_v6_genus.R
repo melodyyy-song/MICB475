@@ -184,9 +184,9 @@ combined_bar_plot <- ggplot() +
   ylab("Log2 Fold Change") + 
   scale_fill_manual(values = c("OT" = "lightblue","OF" = "gray",
                                "YT" = "lightgreen", "YF" = "darkgray"),
-                    name = "Significance",
-                    labels = c("Insulin Sensitive (41-62)", "Insulin Resistant (41-62)", 
-                               "Insulin Sensitive (18-40)", "Insulin Resistant(18-40)"))+
+                    name = "Legend",
+                    labels = c("Significant (Old Age Group)", "Not Significant (Old Age Group)", 
+                               "Significant (Young Age Group)", "Not Significant (Young Age Group"))+
   ylab("log2FoldChange 
        (insulin-resistant/insulin-sensitive)") +
   coord_flip()
