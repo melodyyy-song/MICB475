@@ -196,18 +196,27 @@ ggplot(sigASVs_insulin_final) +
   theme(axis.text.x = element_text(angle=90, hjust=1, vjust=0.5))
 
 #18-40 for insulin
-ggplot(sigASVs_young_final) +
+young_plot<- ggplot(sigASVs_young_final) +
   geom_bar(aes(x=Genus, y=log2FoldChange), stat="identity")+
   geom_errorbar(aes(x=Genus, ymin=log2FoldChange-lfcSE, ymax=log2FoldChange+lfcSE)) +
   xlab("Genus of significant ASVs") +
-  theme(axis.text.x = element_text(angle=90, hjust=1, vjust=0.5))
+  theme(axis.text.x = element_text( hjust=1, vjust=0.5))+
+  coord_flip()
 
 #41-62 for insulin
-ggplot(sigASVs_old_final) +
+old_plot <- ggplot(sigASVs_old_final) +
   geom_bar(aes(x=Genus, y=log2FoldChange), stat="identity")+
   geom_errorbar(aes(x=Genus, ymin=log2FoldChange-lfcSE, ymax=log2FoldChange+lfcSE)) +
   xlab("Genus of significant ASVs") +
-  theme(axis.text.x = element_text(angle=90, hjust=1, vjust=0.5))
+  theme(axis.text.x = element_text( hjust=1, vjust=0.5)) +
+  coord_flip()
+
+ggarrange(young_plot + rremove("y.ticks"),
+          old_plot, #+ rremove("y.text") + rremove("ylab") +rremove("y.ticks"),
+          labels = "AUTO",
+          nrow = 2,
+          widths = c(1.5,1),
+          legend = "top")
 
 #### Combined Bar graph ####
 ggplot() +

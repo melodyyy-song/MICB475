@@ -214,7 +214,7 @@ ggplot() +
   geom_errorbar(data = sigASVs_old, aes(x=Genus, ymin=log2FoldChange-lfcSE, ymax=log2FoldChange+lfcSE)) +
   geom_bar(data = sigASVs_young, aes(x=Genus, y=log2FoldChange), stat="identity", fill="lightgreen")+
   geom_errorbar(data = sigASVs_young, aes(x=Genus, ymin=log2FoldChange-lfcSE, ymax=log2FoldChange+lfcSE)) +
-  theme(axis.text.x = element_text(angle=90, hjust=1, vjust=0.5)) +
-  ylab("Log2 Fold Change") + 
+  theme(axis.text.x = element_text( hjust=1, vjust=0.5)) +
+  ylab("Log2 Fold Change
+       (insulin-resistant/insulin-sensitive)") + 
   coord_flip()
-
