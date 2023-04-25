@@ -17,7 +17,7 @@ otu <- read.delim(otuFP, skip=1)
 taxaFP <- "taxonomy.tsv"
 taxa <- read.delim(taxaFP)
 
-phylotreefp <- "tree.nwk"
+phylotreefp <- "rooted-tree.nwk"
 phylotree <-  read_tree(phylotreefp)
 #### Format files to be a phyloseq object ####
 ### Meta Sample data ###
@@ -92,7 +92,7 @@ DeSeqres_old %>%
 sigASVs_young <- DeSeqres_young %>% 
   filter(padj<0.05 & abs(log2FoldChange)>1) %>%
   dplyr::rename(ASV=row)
-#View(sigASVs_young)
+View(sigASVs_young)
 sigASVs_young_vec <- sigASVs_young %>%
   pull(ASV)
 colombia_young_DESeq <- prune_taxa(sigASVs_young_vec,colombia_final)
@@ -103,15 +103,11 @@ sigASVs_young <- tax_table(colombia_young_DESeq) %>% as.data.frame() %>%
   mutate(Genus = ifelse(Genus =='g__uncultured', paste(Family,'g__uncl',sep=' + '),Genus)) %>%
   mutate(highlight_young = ifelse(abs(log2FoldChange)>1.5, "YT", "YF"))
 
-sigASVs_young_with_empty <- sigASVs_young
-head(sigASVs_young_with_empty)
-sigASVs_young_with_empty <- replace(all_combined, "Genus" %in% sigASVs_old$Genus,log2FoldChange == 0)
-print(df)
 #41-60 for insulin
 sigASVs_old <- DeSeqres_old %>% 
   filter(padj<0.05 & abs(log2FoldChange)>1 ) %>%
   dplyr::rename(ASV=row)
-#View(sigASVs_old)
+View(sigASVs_old)
 sigASVs_old_vec <- sigASVs_old %>%
   pull(ASV)
 colombia_old_DESeq <- prune_taxa(sigASVs_old_vec,colombia_final)
@@ -122,42 +118,53 @@ sigASVs_old <- tax_table(colombia_old_DESeq) %>% as.data.frame() %>%
   mutate(Genus = ifelse(Genus =='g__uncultured', paste(Family,'g__uncl',sep=' + '),Genus)) %>%
   mutate(highlight_old = ifelse(abs(log2FoldChange)>1.5, "OT", "OF"))
 
-#Making the figures have same genuses
-#Find shared Genus names
+####Making the figures have same genuses####
+#Find shared Genus names between yung and old age groups
 sigASVs_combined <- merge(sigASVs_young, sigASVs_old, by = "Genus")
 view(sigASVs_combined) #Find the 2 shared Genus names
 #Get dataframe of sigASVs_young without shared Genus names
-sigASVs_young2 <- rbind(sigASVs_young[,-15],
-                        sigASVs_old[,-15] %>%
-                          select(-is.numeric) %>%
-                          filter((!Genus %in% c("g__Butyrivibrio", "f__Erysipelotrichaceae + g__uncl"))) %>%
-                          add_column(baseMean = NA,
-                                     log2FoldChange = NA,
-                                     lfcSE = NA,
-                                     stat = NA,
-                                     pvalue = NA,
-                                     padj = NA) ) %>%
+to_combine_to_old <- sigASVs_young %>%
+  filter((!Genus %in% c("g__Butyrivibrio", "f__Erysipelotrichaceae + g__uncl")))
+#Dataframe listing all ASVs and genuses shown with sigASVs from both groups
+all_combined <- rbind(sigASVs_old[,-15], to_combine_to_old[,-15])
+
+#Updated list of sigASVs_young with all ASVs 
+sigASVs_young2 <- DeSeqres_young %>% 
+  dplyr::rename(ASV=row) %>%
+  filter(ASV %in% all_combined$ASV)
+sigASVs_young_vec2 <- sigASVs_young2 %>%
+  pull(ASV) 
+colombia_young_DESeq2 <- prune_taxa(sigASVs_young_vec2,colombia_final)
+sigASVs_young2 <- tax_table(colombia_young_DESeq2) %>% as.data.frame() %>%
+  rownames_to_column(var="ASV") %>%
+  right_join(sigASVs_young2) %>%
+  arrange(log2FoldChange) %>%
+  mutate(Genus = ifelse(Genus =='g__uncultured', paste(Family,'g__uncl',sep=' + '),Genus)) %>%
   mutate(highlight_young = ifelse(abs(log2FoldChange)>1.5, "YT", "YF"))
-sigASVs_old2 <- rbind(sigASVs_old[,-15],
-                      sigASVs_young[,-15] %>%
-                        select(-is.numeric) %>%
-                        filter((!Genus %in% c("g__Butyrivibrio", "f__Erysipelotrichaceae + g__uncl"))) %>%
-                        add_column(baseMean = NA,
-                                   log2FoldChange = NA,
-                                   lfcSE = NA,
-                                   stat = NA,
-                                   pvalue = NA,
-                                   padj = NA) ) %>%
+
+#List of sigASVs_old with all ASVs
+sigASVs_old2 <- DeSeqres_old %>% 
+  dplyr::rename(ASV=row) %>%
+  filter(ASV %in% all_combined$ASV)
+sigASVs_old_vec2 <- sigASVs_old2 %>%
+  pull(ASV) 
+colombia_old_DESeq2 <- prune_taxa(sigASVs_old_vec2,colombia_final)
+sigASVs_old2 <- tax_table(colombia_old_DESeq2) %>% as.data.frame() %>%
+  rownames_to_column(var="ASV") %>%
+  right_join(sigASVs_old2) %>%
+  arrange(log2FoldChange) %>%
+  mutate(Genus = ifelse(Genus =='g__uncultured', paste(Family,'g__uncl',sep=' + '),Genus)) %>%
   mutate(highlight_old = ifelse(abs(log2FoldChange)>1.5, "OT", "OF"))
 
-#### Prune phyloseq file
-#### log2FoldChange ####
+#### Plotting log2FoldChange ####
 #18-40 for insulin
 young_bar_plot <- ggplot(sigASVs_young2) +
-  geom_bar(aes(x= Genus, y=log2FoldChange, fill=highlight_young), stat="identity")+
+  geom_bar(aes(x=Genus, y=log2FoldChange, fill=highlight_young), stat="identity")+
   geom_errorbar(aes(x=Genus, ymin=log2FoldChange-lfcSE, ymax=log2FoldChange+lfcSE)) +
-  scale_fill_manual(values = c("YT" = "lightgreen","YF" = "gray")) +
-  theme(axis.text.x = element_text(hjust=0.5, vjust=0.5), legend.position = "none") +
+  scale_fill_manual(values = c("YT" = "lightgreen","YF" = "gray"),
+                    name = "Significance (18-40 years)",
+                    labels = c("no", "yes")) +
+  theme(axis.text.x = element_text(hjust=0.5, vjust=0.5)) +
   ylab("log2FoldChange 
        (insulin-resistant/insulin-sensitive)") +
   coord_flip()
@@ -167,30 +174,14 @@ young_bar_plot
 old_bar_plot <- ggplot(sigASVs_old2) +
   geom_bar(aes(x=Genus, y=log2FoldChange, fill = highlight_old), stat="identity") +
   geom_errorbar(aes(x=Genus, ymin=log2FoldChange-lfcSE, ymax=log2FoldChange+lfcSE)) +
-  scale_fill_manual(values = c("OT" = "lightblue","OF" = "gray")) +
+  scale_fill_manual(values = c("OT" = "lightblue","OF" = "gray"), 
+                    name = "Significance (41-62 years)",
+                    labels = c("no", "yes")) +
   ylab("log2FoldChange 
        (insulin-resistant/insulin-sensitive)") +
-  theme(axis.text.x = element_text(hjust=0.5, vjust=0.5), legend.position = "none") +
+  theme(axis.text.x = element_text(hjust=0.5, vjust=0.5) ) +
   coord_flip()
 old_bar_plot
-
-#### Combined Bar graph ####
-combined_bar_plot <- ggplot() +
-  geom_bar(data = sigASVs_old2, aes(x=Genus, y=log2FoldChange,fill=highlight_old), stat="identity")+
-  geom_errorbar(data = sigASVs_old2, aes(x=Genus, ymin=log2FoldChange-lfcSE, ymax=log2FoldChange+lfcSE)) +
-  geom_bar(data = sigASVs_young2, aes(x=Genus, y=log2FoldChange, fill=highlight_young), stat="identity")+
-  geom_errorbar(data = sigASVs_young2, aes(x=Genus, ymin=log2FoldChange-lfcSE, ymax=log2FoldChange+lfcSE)) +
-  theme(axis.text.x = element_text(hjust=1, vjust=0.5)) +
-  ylab("Log2 Fold Change") + 
-  scale_fill_manual(values = c("OT" = "lightblue","OF" = "gray",
-                               "YT" = "lightgreen", "YF" = "darkgray"),
-                    name = "Legend",
-                    labels = c("Significant (Old Age Group)", "Not Significant (Old Age Group)", 
-                               "Significant (Young Age Group)", "Not Significant (Young Age Group"))+
-  ylab("log2FoldChange 
-       (insulin-resistant/insulin-sensitive)") +
-  coord_flip()
-combined_bar_plot
 
 ####Relative Abundance Boxplots####
 list_genus_colombia_old <- genus_colombia_old %>%
@@ -210,7 +201,11 @@ old_box_plot <- list_genus_colombia_old %>% filter(OTU %in% ASV_of_interest_old)
   ggplot(aes(Genus,Abundance,fill=insulin_resistance)) +
   geom_boxplot() +
   coord_flip() +
-  scale_y_log10() 
+  scale_y_log10() +
+  scale_fill_manual(values = c("yes" = "cornflowerblue","no" = "tomato"),
+                     name="Insulin Resistance (41-62 years)")+
+  ylab("
+       Abundance")
 old_box_plot
 
 young_box_plot <- list_genus_colombia_young %>% filter(OTU %in% ASV_of_interest_young) %>%
@@ -219,47 +214,27 @@ young_box_plot <- list_genus_colombia_young %>% filter(OTU %in% ASV_of_interest_
   ggplot(aes(Genus,Abundance,fill=insulin_resistance)) +
   geom_boxplot() +
   coord_flip() +
-  scale_y_log10()
+  scale_y_log10()+
+  scale_fill_manual(values = c("yes" = "cornflowerblue","no" = "tomato"),
+                    name="Insulin Resistance (18-40 years)")+
+  ylab("
+       Abundance")
 young_box_plot
 
-blank_box_plot <- list_genus_colombia_young %>% filter(OTU %in% ASV_of_interest_young) %>%
-  mutate(Genus = ifelse(Genus =='g__uncultured', paste(Family,'g__uncl',sep=' + '),Genus)) %>%
-  mutate(Abundance = Abundance + min(.$Abundance[.$Abundance>0])/2) %>%
-  ggplot(aes(Genus,Abundance,fill=insulin_resistance)) +
-  geom_blank() +
-  coord_flip() +
-  scale_y_log10()
-blank_box_plot
-ggplot(list_genus_colombia_old,aes(Genus,Abundance, fill=))+geom_blank()+theme_bw()
-
 ####Combined Figure####
-#Version 1
-ggarrange(combined_bar_plot ,
-          young_bar_plot + rremove("y.text") + rremove("ylab") +rremove("y.ticks"),
-          old_bar_plot + rremove("y.text") + rremove("ylab") +rremove("y.ticks"),
-          blank_box_plot,
-          young_box_plot + rremove("y.text") + rremove("ylab") +rremove("y.ticks"),
-          old_box_plot + rremove("y.text") + rremove("ylab") +rremove("y.ticks"),
-          labels = "AUTO",
-          common.legend = TRUE,
-          ncol = 3,
-          nrow = 2,
-          widths = c(2,1,1))
-#Version 2
-ggarrange(combined_bar_plot ,
-          blank_box_plot+ rremove("y.text") + rremove("ylab") +rremove("y.ticks"),
-          young_bar_plot, #+ rremove("y.text") + rremove("ylab") +rremove("y.ticks"),
+#Version Final
+ggarrange(young_bar_plot + rremove("y.ticks"),
           young_box_plot + rremove("y.text") + rremove("ylab") +rremove("y.ticks"),
           old_bar_plot, #+ rremove("y.text") + rremove("ylab") +rremove("y.ticks"),
           old_box_plot + rremove("y.text") + rremove("ylab") +rremove("y.ticks"),
           labels = "AUTO",
-          common.legend = TRUE,
           ncol = 2,
-          nrow = 3,
-          widths = c(1.5,1))
+          nrow = 2,
+          widths = c(1.5,1),
+          legend = "top")
+#Use min pixels width:875, and height:1000 to make sure are labels are shown
 
 ####VENN DIAGRAM####
-
 colombia_RA <- transform_sample_counts(colombia_final, fun=function(x) x/sum(x))
 # Filter dataset by age range
 colombia_young_RA <- subset_samples(colombia_RA, age_range=="18_40")
@@ -269,27 +244,36 @@ colombia_old_RA <- subset_samples(colombia_RA, age_range=="41_62")
 colombia_young_IR <- subset_samples(colombia_young_RA, insulin_resistance=="yes")
 colombia_young_IR_Neg <- subset_samples(colombia_young_RA, insulin_resistance=="no")
 
-young_IR_list <- core_members(colombia_young_IR, detection=0, prevalence = 0.5)
-young_IR_Neg_list <- core_members(colombia_young_IR_Neg, detection=0, prevalence = 0.5)
+young_IR_list <- core_members(colombia_young_IR, detection=0.001, prevalence = 0.3)
+young_IR_Neg_list <- core_members(colombia_young_IR_Neg, detection=0.001, prevalence = 0.3)
 list(Young_IR = young_IR_list, Young_IR_Neg = young_IR_Neg_list)
 
-ggVennDiagram(x=list(Young_IR = young_IR_list, Young_IR_Neg = young_IR_Neg_list)
-              , filename = "venndiagram_young_and_old.png", output=TRUE) +
-  labs(fill="Count") 
+young_venn <- ggVennDiagram(x=list("Insulin Sensitive" = young_IR_Neg_list, "Insulin Resistant" = young_IR_list)
+                            , filename = "venndiagram_young_and_old.png", output=TRUE) +
+  labs(fill="Count") +
+  scale_fill_distiller(palette = "Blues")+
+  ggtitle("Young Age Group (18-40)")+
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
 
 ####Core Microbiome for old Insulin sensitivity####
 colombia_old_IR <- subset_samples(colombia_old_RA, insulin_resistance=="yes")
 colombia_old_IR_Neg <- subset_samples(colombia_old_RA, insulin_resistance=="no")
 
-old_IR_list <- core_members(colombia_old_IR, detection=0.001, prevalence = 0.5)
-old_IR_Neg_list <- core_members(colombia_old_IR_Neg, detection=0.001, prevalence = 0.5)
+old_IR_list <- core_members(colombia_old_IR, detection=0.001, prevalence = 0.3)
+old_IR_Neg_list <- core_members(colombia_old_IR_Neg, detection=0.001, prevalence = 0.3)
 
 list(old_IR = old_IR_list, old_IR_Neg = old_IR_Neg_list)
 
-ggVennDiagram(x=list(old_IR = old_IR_list, old_IR_Neg = old_IR_Neg_list)
-              , filename = "venndiagram_young_and_old.png", output=TRUE) +
-  labs(fill="Count")
+old_venn <- ggVennDiagram(x=list("Insulin Sensitive" = old_IR_Neg_list, "Insulin Resistant" = old_IR_list)
+                          , filename = "venndiagram_young_and_old.png", output=TRUE) +
+  labs(fill="Count")+
+  scale_fill_distiller(palette = "Blues")+
+  ggtitle("Old Age Group (41-62)")+
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
 
-#The "core microbiome" is traditionally defined using a combination of prevalence and abundance thresholds
-#Common thresholds for abundance include: 0 (presence/absence), 0.001 (filter out rare), and 0.01 (keep only abundant)
-#Common thresholds for prevalence include: 0 (present at least once), 0.5 (present in more than half), and 0.8-0.9 (present in most samples, but allows outliers to exist)
+#Combined figure
+ggarrange(young_venn,
+          old_venn,
+          common.legend = TRUE,
+          legend = "right",
+          labels = "AUTO")
